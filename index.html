@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>百萬富翁 — 科學第4課：動植物與環境</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-deep: #030617;
+      --bg-radial: #0c194a;
+      --panel-bg: rgba(7, 15, 48, 0.92);
+      --gold: #f59e0b;
+      --gold-light: #fde047;
+      --blue-glow: #38bdf8;
+      --lozenge-bg: linear-gradient(180deg, #0b194b 0%, #050b29 50%, #0b194b 100%);
+      --lozenge-border: #60a5fa;
+      --orange-lock: linear-gradient(180deg, #f59e0b 0%, #b45309 50%, #f59e0b 100%);
+      --green-win: linear-gradient(180deg, #22c55e 0%, #15803d 50%, #22c55e 100%);
+      --red-lose: linear-gradient(180deg, #ef4444 0%, #991b1b 50%, #ef4444 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, var(--bg-radial) 0%, var(--bg-deep) 85%);
+      font-family: 'Montserrat', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #ffffff;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        conic-gradient(from 155deg at 20% -10%, rgba(56, 189, 248, 0.12) 0deg, transparent 25deg),
+        conic-gradient(from 180deg at 80% -10%, rgba(56, 189, 248, 0.12) 0deg, transparent 25deg);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Confetti Canvas */
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* =========================================================
+       FULL-SCREEN APP SHELL
+       ========================================================= */
+    .app-container {
+      position: relative;
+      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 6px) env(safe-area-inset-right, 10px) env(safe-area-inset-bottom, 6px) env(safe-area-inset-left, 10px);
+    }
+
+    /* Top Control Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 12px;
+      background: rgba(4, 10, 34, 0.85);
+      border-bottom: 1px solid rgba(96, 165, 250, 0.35);
+      flex-shrink: 0;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 900;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      color: var(--gold-light);
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-pill {
+      background: rgba(15, 30, 84, 0.9);
+      border: 1px solid var(--lozenge-border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #e0f2fe;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .hud-pill.gameover-badge {
+      background: rgba(127, 29, 29, 0.92);
+      border-color: #f87171;
+      color: #fecaca;
+    }
+
+    .hud-pill:active {
+      transform: scale(0.96);
+    }
+
+    .mobile-ladder-toggle {
+      display: none;
+      background: linear-gradient(180deg, #d97706, #92400e);
+      border-color: var(--gold-light);
+      color: #fff;
+    }
+
+    /* =========================================================
+       MAIN RESPONSIVE STAGE (HORIZONTAL IPAD/PC vs VERTICAL PHONE)
+       ========================================================= */
+    .main-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      gap: 12px;
+      padding: 6px 8px;
+    }
+
+    .quiz-arena {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      height: 100%;
+      overflow-y: auto;
+      padding: 2px 6px;
+    }
+
+    /* Center Emblem & Lifelines */
+    .stage-header {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .millionaire-crest {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e3a8a 0%, #060d2b 75%);
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.5), inset 0 0 14px rgba(245, 158, 11, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .millionaire-crest::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      border: 1px dashed rgba(253, 224, 71, 0.55);
+    }
+
+    .crest-sub {
+      font-size: 0.45rem;
+      letter-spacing: 0.8px;
+      color: #93c5fd;
+    }
+
+    .crest-main {
+      font-size: 0.72rem;
+      font-weight: 900;
+      color: var(--gold-light);
+      line-height: 1.15;
+      margin: 2px 0;
+    }
+
+    /* Lifelines Bar */
+    .lifelines-bar {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .lifeline-btn {
+      position: relative;
+      width: 114px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, #1d4ed8 0%, #091540 100%);
+      border: 2.5px solid #60a5fa;
+      color: #ffffff;
+      font-family: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 8px;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .lifeline-btn:hover:not(:disabled) {
+      border-color: var(--gold-light);
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.65);
+      transform: translateY(-2px);
+    }
+
+    .lifeline-btn:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .lifeline-btn .ll-icon {
+      font-size: 1rem;
+      line-height: 1.1;
+    }
+
+    .lifeline-btn .ll-label {
+      font-size: 0.56rem;
+      letter-spacing: 0.3px;
+      line-height: 1.15;
+      color: #bae6fd;
+    }
+
+    .lifeline-btn.used {
+      opacity: 0.38;
+      cursor: not-allowed;
+      border-color: #ef4444;
+      background: #1e1b2e;
+      box-shadow: none;
+    }
+
+    .lifeline-btn.used::after {
+      content: "✕";
+      position: absolute;
+      font-size: 2.3rem;
+      color: #ef4444;
+      font-weight: 900;
+      text-shadow: 0 0 6px #000;
+    }
+
+    /* =========================================================
+       HEXAGONAL QUESTION & ANSWER LOZENGES
+       ========================================================= */
+    .question-wrapper {
+      width: 100%;
+      max-width: 880px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin: 6px 0;
+    }
+
+    .question-wrapper::before,
+    .question-wrapper::after {
+      content: "";
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #60a5fa);
+    }
+    .question-wrapper::after {
+      background: linear-gradient(90deg, #60a5fa, transparent);
+    }
+
+    .lozenge-outer {
+      width: 94%;
+      background: linear-gradient(90deg, #3b82f6, #93c5fd, #3b82f6);
+      padding: 2.5px;
+      clip-path: polygon(22px 0%, calc(100% - 22px) 0%, 100% 50%, calc(100% - 22px) 100%, 22px 100%, 0% 50%);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+    }
+
+    .question-box {
+      background: var(--lozenge-bg);
+      clip-path: polygon(21px 0%, calc(100% - 21px) 0%, 100% 50%, calc(100% - 21px) 100%, 21px 100%, 0% 50%);
+      padding: 14px 36px;
+      text-align: center;
+      min-height: 78px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .q-category-tag {
+      font-size: 0.68rem;
+      letter-spacing: 0.8px;
+      color: var(--gold-light);
+      margin-bottom: 5px;
+    }
+
+    .q-text {
+      font-size: 1.08rem;
+      font-weight: 700;
+      line-height: 1.45;
+      color: #ffffff;
+    }
+
+    /* Answer Grid (2x2 on Horizontal iPad/PC) */
+    .answers-grid {
+      width: 100%;
+      max-width: 880px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px 14px;
+      margin-bottom: 4px;
+    }
+
+    .answer-lozenge-wrap {
+      background: linear-gradient(90deg, #3b82f6, #93c5fd, #3b82f6);
+      padding: 2px;
+      clip-path: polygon(18px 0%, calc(100% - 18px) 0%, 100% 50%, calc(100% - 18px) 100%, 18px 100%, 0% 50%);
+      transition: transform 0.12s ease;
+    }
+
+    .answer-lozenge-wrap:active {
+      transform: scale(0.98);
+    }
+
+    .answer-btn {
+      width: 100%;
+      height: 100%;
+      min-height: 54px;
+      background: var(--lozenge-bg);
+      clip-path: polygon(17px 0%, calc(100% - 17px) 0%, 100% 50%, calc(100% - 17px) 100%, 17px 100%, 0% 50%);
+      border: none;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.94rem;
+      font-weight: 700;
+      padding: 10px 30px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.35;
+      transition: background 0.2s ease;
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      background: linear-gradient(180deg, #1d4ed8 0%, #0f256e 50%, #1d4ed8 100%);
+    }
+
+    .answer-letter {
+      color: var(--gold);
+      font-weight: 900;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* States: Selected/Locked (Orange), Correct (Green), Wrong (Red), Eliminated (50:50) */
+    .answer-lozenge-wrap.locked {
+      background: #fde047;
+    }
+    .answer-lozenge-wrap.locked .answer-btn {
+      background: var(--orange-lock);
+      color: #000000;
+    }
+    .answer-lozenge-wrap.locked .answer-letter {
+      color: #ffffff;
+    }
+
+    .answer-lozenge-wrap.correct {
+      background: #86efac;
+      animation: pulseWin 0.5s ease 2;
+    }
+    .answer-lozenge-wrap.correct .answer-btn {
+      background: var(--green-win);
+      color: #ffffff;
+    }
+    .answer-lozenge-wrap.correct .answer-letter {
+      color: #fef08a;
+    }
+
+    .answer-lozenge-wrap.wrong {
+      background: #fca5a5;
+    }
+    .answer-lozenge-wrap.wrong .answer-btn {
+      background: var(--red-lose);
+      color: #ffffff;
+    }
+
+    .answer-lozenge-wrap.eliminated {
+      opacity: 0.22;
+      pointer-events: none;
+    }
+
+    @keyframes pulseWin {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.4); }
+    }
+
+    /* =========================================================
+       "FINAL ANSWER" CONFIRMATION POPUP BAR
+       ========================================================= */
+    .final-answer-bar {
+      width: 100%;
+      max-width: 880px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 16px;
+      background: rgba(8, 20, 62, 0.92);
+      border: 2px solid var(--gold-light);
+      border-radius: 40px;
+      box-shadow: 0 0 24px rgba(245, 158, 11, 0.55);
+      animation: popScale 0.18s ease-out;
+    }
+
+    .final-answer-bar.active {
+      display: flex;
+    }
+
+    .selected-prompt-text {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #fde047;
+      max-width: 65%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .final-answer-btn {
+      background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+      border: 2.5px solid #fef08a;
+      color: #ffffff;
+      font-family: inherit;
+      font-weight: 900;
+      font-size: 0.9rem;
+      letter-spacing: 0.6px;
+      padding: 10px 24px;
+      border-radius: 26px;
+      cursor: pointer;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
+      animation: pulseConfirm 1.2s infinite alternate;
+      flex-shrink: 0;
+    }
+
+    .final-answer-btn:active {
+      transform: scale(0.95);
+    }
+
+    @keyframes pulseConfirm {
+      from { box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
+      to { box-shadow: 0 0 22px rgba(253, 224, 71, 0.95); }
+    }
+
+    /* Explanation & Next / Game-Over Action Drawer */
+    .feedback-panel {
+      width: 100%;
+      max-width: 880px;
+      background: rgba(8, 20, 62, 0.96);
+      border: 2px solid var(--gold);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85);
+      animation: slideUp 0.25s ease-out;
+    }
+
+    .feedback-panel.active {
+      display: flex;
+    }
+
+    .feedback-panel.loss-border {
+      border-color: #ef4444;
+      background: rgba(30, 8, 24, 0.97);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .feedback-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .feedback-explanation {
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: #e0f2fe;
+      background: rgba(3, 8, 28, 0.65);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border-left: 4px solid var(--blue-glow);
+    }
+
+    .feedback-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .next-btn {
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+      border: 2px solid #fef08a;
+      color: #000000;
+      font-family: inherit;
+      font-weight: 900;
+      font-size: 0.85rem;
+      padding: 9px 22px;
+      border-radius: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.45);
+    }
+
+    .next-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* =========================================================
+       RIGHT SIDEBAR: 20-TIER MONEY LADDER (HORIZONTAL HUD)
+       ========================================================= */
+    .money-ladder-sidebar {
+      width: 235px;
+      height: 100%;
+      background: rgba(5, 11, 38, 0.94);
+      border: 2px solid rgba(96, 165, 250, 0.45);
+      border-radius: 12px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column-reverse;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+      transition: border-color 0.3s ease;
+    }
+
+    .money-ladder-sidebar.frozen {
+      border-color: rgba(239, 68, 68, 0.65);
+    }
+
+    .ladder-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--gold);
+      transition: all 0.2s ease;
+    }
+
+    .ladder-row.milestone {
+      color: #ffffff;
+      font-weight: 900;
+    }
+
+    .ladder-row.passed {
+      color: #4ade80;
+      opacity: 0.75;
+    }
+
+    .ladder-row.active {
+      background: linear-gradient(90deg, #f59e0b, #d97706);
+      color: #000000;
+      font-weight: 900;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+      transform: scale(1.03);
+    }
+
+    .ladder-row.frozen-stop {
+      background: linear-gradient(90deg, #991b1b, #7f1d1d);
+      color: #fecaca;
+      font-weight: 900;
+      border: 1px solid #f87171;
+    }
+
+    .money-ladder-sidebar.frozen .ladder-row:not(.passed):not(.frozen-stop) {
+      opacity: 0.28;
+      text-decoration: line-through;
+    }
+
+    .ladder-num {
+      width: 24px;
+      display: inline-block;
+    }
+
+    /* =========================================================
+       MODALS: START SCREEN, PHONE A FRIEND, AUDIENCE, END SCREEN
+       ========================================================= */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 5, 18, 0.88);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .studio-modal {
+      width: 100%;
+      max-width: 520px;
+      background: linear-gradient(180deg, #0e1e5b 0%, #050b29 100%);
+      border: 3px solid var(--gold);
+      border-radius: 16px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.45);
+      animation: popScale 0.22s ease-out;
+    }
+
+    @keyframes popScale {
+      from { transform: scale(0.88); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--gold-light);
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .lifeline-guide-list {
+      background: rgba(3, 8, 28, 0.78);
+      border: 1.5px solid rgba(96, 165, 250, 0.45);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      font-size: 0.86rem;
+      line-height: 1.45;
+      color: #f1f5f9;
+    }
+
+    .guide-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .guide-badge {
+      background: #1d4ed8;
+      border: 1px solid #93c5fd;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Phone a Friend: Mr Tai */
+    .caller-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(3, 8, 28, 0.85);
+      border: 1.5px solid #60a5fa;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .caller-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #1e3a8a);
+      border: 2px solid var(--gold-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      flex-shrink: 0;
+    }
+
+    .ringing-pulse {
+      animation: ringAnim 0.6s infinite alternate;
+    }
+
+    @keyframes ringAnim {
+      from { transform: rotate(-10deg) scale(1); }
+      to { transform: rotate(10deg) scale(1.08); }
+    }
+
+    .caller-speech {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: #f8fafc;
+      text-align: left;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--gold);
+    }
+
+    /* Ask the Audience Bar Chart */
+    .audience-chart {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      height: 190px;
+      background: rgba(2, 6, 23, 0.85);
+      border: 1.5px solid #60a5fa;
+      border-radius: 12px;
+      padding: 24px 16px 12px 16px;
+      margin-bottom: 16px;
+    }
+
+    .bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 56px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar-pct {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--gold-light);
+      margin-bottom: 6px;
+    }
+
+    .bar-fill {
+      width: 38px;
+      height: 0%;
+      background: linear-gradient(180deg, #38bdf8 0%, #1d4ed8 100%);
+      border: 1.5px solid #bae6fd;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      transition: height 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+    }
+
+    .bar-label {
+      margin-top: 8px;
+      font-weight: 900;
+      font-size: 0.95rem;
+      color: #ffffff;
+      border-top: 2px solid #60a5fa;
+      width: 100%;
+      padding-top: 4px;
+    }
+
+    .modal-close-btn {
+      background: linear-gradient(180deg, #2563eb, #1e3a8a);
+      border: 2px solid #93c5fd;
+      color: #ffffff;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 10px 26px;
+      border-radius: 22px;
+      cursor: pointer;
+    }
+
+    /* =========================================================
+       VERTICAL PHONE PORTRAIT ADAPTATION
+       ========================================================= */
+    @media (max-width: 767px) and (orientation: portrait), (max-width: 640px) {
+      .brand-badge {
+        font-size: 0.74rem;
+      }
+
+      .mobile-ladder-toggle {
+        display: flex;
+      }
+
+      .main-stage {
+        flex-direction: column;
+        padding: 4px 6px;
+      }
+
+      .money-ladder-sidebar {
+        position: fixed;
+        top: 52px;
+        right: 10px;
+        width: 220px;
+        height: calc(100vh - 70px);
+        z-index: 90;
+        display: none;
+        box-shadow: -8px 8px 30px rgba(0, 0, 0, 0.95);
+      }
+
+      .money-ladder-sidebar.mobile-open {
+        display: flex;
+      }
+
+      .millionaire-crest {
+        width: 58px;
+        height: 58px;
+      }
+
+      .crest-main {
+        font-size: 0.58rem;
+      }
+
+      .lifelines-bar {
+        gap: 8px;
+      }
+
+      .lifeline-btn {
+        width: 98px;
+        height: 46px;
+      }
+
+      .lifeline-btn .ll-label {
+        font-size: 0.5rem;
+      }
+
+      .question-wrapper::before,
+      .question-wrapper::after {
+        display: none;
+      }
+
+      .lozenge-outer {
+        width: 100%;
+        clip-path: polygon(14px 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0% 50%);
+      }
+
+      .question-box {
+        clip-path: polygon(13px 0%, calc(100% - 13px) 0%, 100% 50%, calc(100% - 13px) 100%, 13px 100%, 0% 50%);
+        padding: 10px 20px;
+        min-height: 68px;
+      }
+
+      .q-text {
+        font-size: 0.9rem;
+      }
+
+      .answers-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .answer-btn {
+        min-height: 44px;
+        font-size: 0.85rem;
+        padding: 8px 22px;
+      }
+
+      .final-answer-bar {
+        padding: 6px 12px;
+        gap: 10px;
+      }
+
+      .selected-prompt-text {
+        font-size: 0.78rem;
+      }
+
+      .final-answer-btn {
+        font-size: 0.82rem;
+        padding: 8px 18px;
+      }
+
+      .feedback-panel {
+        padding: 8px 10px;
+      }
+
+      .feedback-explanation {
+        font-size: 0.78rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Massive Victory Confetti Overlay -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app-container">
+    <!-- TOP HUD -->
+    <div class="top-bar">
+      <div class="brand-badge">
+        <span>💎</span>
+        <span>百萬富翁：科學第4課（動植物與環境）</span>
+      </div>
+
+      <div class="top-controls">
+        <div class="hud-pill" id="hudPrizePill">第 1 / 20 題 • £100</div>
+        <button class="hud-pill" id="soundToggleBtn" onclick="toggleAudio()">🔊 音效</button>
+        <button class="hud-pill mobile-ladder-toggle" onclick="toggleMobileLadder()">📊 獎金榜</button>
+      </div>
+    </div>
+
+    <!-- MAIN STAGE -->
+    <div class="main-stage">
+      <!-- LEFT / CENTER ARENA -->
+      <div class="quiz-arena">
+        
+        <!-- Logo & Lifelines -->
+        <div class="stage-header">
+          <div class="millionaire-crest">
+            <span class="crest-sub">科學挑戰賽</span>
+            <span class="crest-main">百萬富翁</span>
+            <span class="crest-sub">生物與環境</span>
+          </div>
+
+          <div class="lifelines-bar">
+            <button class="lifeline-btn" id="ll-5050" onclick="useFiftyFifty()">
+              <span class="ll-icon">50:50</span>
+              <span class="ll-label">刪除兩項</span>
+            </button>
+            <button class="lifeline-btn" id="ll-phone" onclick="usePhoneFriend()">
+              <span class="ll-icon">📞</span>
+              <span class="ll-label">打電話問朋友</span>
+            </button>
+            <button class="lifeline-btn" id="ll-audience" onclick="useAskAudience()">
+              <span class="ll-icon">📊</span>
+              <span class="ll-label">問現場觀眾</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- QUESTION LOZENGE -->
+        <div class="question-wrapper">
+          <div class="lozenge-outer">
+            <div class="question-box">
+              <div class="q-category-tag" id="qPartLabel">單元二：生物與環境 • 第 1 / 20 題</div>
+              <div class="q-text" id="questionText">載入題目中...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 ANSWER LOZENGES -->
+        <div class="answers-grid" id="answersGrid">
+          <div class="answer-lozenge-wrap" id="wrap-0">
+            <button class="answer-btn" id="ans-0" onclick="selectAnswer(0)">
+              <span class="answer-letter">A:</span>
+              <span class="answer-content" id="text-0">選項 A</span>
+            </button>
+          </div>
+          <div class="answer-lozenge-wrap" id="wrap-1">
+            <button class="answer-btn" id="ans-1" onclick="selectAnswer(1)">
+              <span class="answer-letter">B:</span>
+              <span class="answer-content" id="text-1">選項 B</span>
+            </button>
+          </div>
+          <div class="answer-lozenge-wrap" id="wrap-2">
+            <button class="answer-btn" id="ans-2" onclick="selectAnswer(2)">
+              <span class="answer-letter">C:</span>
+              <span class="answer-content" id="text-2">選項 C</span>
+            </button>
+          </div>
+          <div class="answer-lozenge-wrap" id="wrap-3">
+            <button class="answer-btn" id="ans-3" onclick="selectAnswer(3)">
+              <span class="answer-letter">D:</span>
+              <span class="answer-content" id="text-3">選項 D</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- "FINAL ANSWER" CONFIRMATION POPUP BAR -->
+        <div class="final-answer-bar" id="finalAnswerBar">
+          <span class="selected-prompt-text" id="selectedChoiceText">已選擇 A</span>
+          <button class="final-answer-btn" onclick="confirmFinalAnswer()">最終答案？ ✔</button>
+        </div>
+
+        <!-- EXPLANATION & CONTINUE / GAME-OVER DRAWER -->
+        <div class="feedback-panel" id="feedbackPanel">
+          <div class="feedback-header">
+            <span id="feedbackStatus" style="color: #4ade80;">✓ 答對了！</span>
+            <span id="feedbackPrizeWon" style="color: var(--gold-light);">獲得：£100</span>
+          </div>
+          <div class="feedback-explanation" id="feedbackExplanation"></div>
+          <div class="feedback-actions" id="feedbackActions"></div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT SIDEBAR: 20-TIER MONEY LADDER -->
+      <div class="money-ladder-sidebar" id="moneyLadder"></div>
+    </div>
+  </div>
+
+  <!-- START SCREEN OVERLAY -->
+  <div class="modal-backdrop active" id="startModal" onclick="ensureIntroPlays()">
+    <div class="studio-modal">
+      <div style="font-size: 2.8rem; margin-bottom: 4px;">💎</div>
+      <div class="modal-title" style="font-size: 1.3rem;">百萬富翁：科學第4課挑戰賽</div>
+      <p style="font-size: 0.88rem; color: #bae6fd; line-height: 1.5; margin-bottom: 14px;">
+        連續答對 <strong>20 題《動植物與環境》選擇題</strong>，贏取終極大獎 <strong>£1,000,000</strong>！一旦答錯遊戲便會結束。
+      </p>
+
+      <div class="lifeline-guide-list">
+        <div style="font-weight: 800; color: var(--gold-light); font-size: 0.84rem;">三個錦囊（每項限用一次）：</div>
+        <div class="guide-item">
+          <span class="guide-badge">50:50</span>
+          <span>刪除 <strong>2 個錯誤答案</strong>。</span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-badge">📞 打電話問朋友</span>
+          <span>致電 <strong>Mr Tai</strong> 講解科學原理。</span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-badge">📊 問現場觀眾</span>
+          <span>查看 <strong>現場觀眾投票統計圖</strong>。</span>
+        </div>
+      </div>
+
+      <button class="next-btn" style="width: 100%; font-size: 1rem; padding: 13px;" onclick="startGame()">進入挑戰賽 ➜</button>
+    </div>
+  </div>
+
+  <!-- PHONE A FRIEND (MR TAI) MODAL -->
+  <div class="modal-backdrop" id="phoneModal">
+    <div class="studio-modal">
+      <div class="modal-title">📞 打電話問朋友</div>
+      <div class="caller-card">
+        <div class="caller-avatar ringing-pulse" id="mrTaiAvatar">👨‍🏫</div>
+        <div>
+          <div style="font-weight: 800; font-size: 1rem; color: var(--gold-light);">Mr Tai</div>
+          <div style="font-size: 0.78rem; color: #4ade80;" id="callStatusText">正在撥號中...</div>
+        </div>
+      </div>
+      <div class="caller-speech" id="mrTaiSpeech">📞 嘟……嘟……正在接通Mr Tai……</div>
+      <button class="modal-close-btn" id="closePhoneBtn" style="display:none;" onclick="closePhoneModal()">謝謝Mr Tai！ ✔</button>
+    </div>
+  </div>
+
+  <!-- ASK THE AUDIENCE MODAL -->
+  <div class="modal-backdrop" id="audienceModal">
+    <div class="studio-modal">
+      <div class="modal-title">📊 問現場觀眾</div>
+      <p style="font-size: 0.8rem; color: #93c5fd; margin-top: -6px; margin-bottom: 12px;">現場觀眾即時投票結果</p>
+      
+      <div class="audience-chart">
+        <div class="bar-col">
+          <div class="bar-pct" id="pct-0">0%</div>
+          <div class="bar-fill" id="bar-0"></div>
+          <div class="bar-label">A</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-pct" id="pct-1">0%</div>
+          <div class="bar-fill" id="bar-1"></div>
+          <div class="bar-label">B</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-pct" id="pct-2">0%</div>
+          <div class="bar-fill" id="bar-2"></div>
+          <div class="bar-label">C</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-pct" id="pct-3">0%</div>
+          <div class="bar-fill" id="bar-3"></div>
+          <div class="bar-label">D</div>
+        </div>
+      </div>
+
+      <button class="modal-close-btn" onclick="closeAudienceModal()">返回題目 ✔</button>
+    </div>
+  </div>
+
+  <!-- FINAL VICTORY MODAL -->
+  <div class="modal-backdrop" id="endModal">
+    <div class="studio-modal">
+      <div style="font-size: 3.2rem; margin-bottom: 6px;">👑</div>
+      <div class="modal-title" style="font-size: 1.35rem;">恭喜你成為百萬富翁！</div>
+      <div style="font-size: 1.75rem; font-weight: 900; color: #4ade80; margin: 10px 0;">£1,000,000</div>
+      <p style="font-size: 0.9rem; color: #e0f2fe; line-height: 1.55; margin-bottom: 18px;">
+        全對 20 / 20 題！你完全掌握了《動植物與環境》的所有知識，成功贏得一百萬英鎊大獎！
+      </p>
+      <button class="next-btn" style="width: 100%; font-size: 0.95rem; padding: 13px;" onclick="restartGame()">從頭再玩一次 🔄</button>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================
+       20 QUESTIONS DATA — 科學第4課：動植物與環境
+       ========================================================= */
+    const prizeLadder = [
+      "£100", "£150", "£200", "£300", "£400",
+      "£500", "£600", "£700", "£800", "£1,000",
+      "£2,000", "£4,000", "£8,000", "£16,000", "£32,000",
+      "£64,000", "£125,000", "£250,000", "£500,000", "£1,000,000"
+    ];
+    const milestones = new Set([4, 9, 14, 19]);
+
+    const quizQuestions = [
+      {
+        part: "單元二：生物與環境",
+        question: "1. 下列哪一項是「極地」自然環境的特點？",
+        options: [
+          "炎熱多雨，陽光充足",
+          "日夜溫差大，乾燥少雨",
+          "氣候嚴寒，終年結冰",
+          "地勢平坦空曠，有明顯雨季和旱季"
+        ],
+        correct: 2,
+        explanation: "極地的氣候嚴寒，終年結冰。（A是熱帶雨林；B是沙漠；D是溫帶草原。）"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "2. 哪一種自然環境位於陸地與水的交界？",
+        options: [
+          "濕地",
+          "沙漠",
+          "溫帶草原",
+          "熱帶雨林"
+        ],
+        correct: 0,
+        explanation: "濕地位於陸地與水的交界，擁有豐富的水生及陸生生物資源。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "3. 北極熊能適應極地嚴寒的環境，主要是因為牠有甚麼身體特徵？",
+        options: [
+          "寬闊而柔軟的腳掌",
+          "濃密且中空的毛髮",
+          "堅硬和防水的外殼",
+          "利於挖掘洞穴的爪子"
+        ],
+        correct: 1,
+        explanation: "北極熊有濃密的毛髮，且毛髮中間是中空的，可以儲存更多空氣，有效阻隔冷空氣並保存體溫。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "4. 海象和企鵝的皮膚下都有厚厚的皮下脂肪，這對牠們有甚麼幫助？",
+        options: [
+          "減少能量消耗",
+          "方便在雪地上快速奔跑",
+          "保存體溫，達到保暖效果",
+          "儲存水分以應付乾旱"
+        ],
+        correct: 2,
+        explanation: "極地動物依靠厚厚的皮下脂肪來保存體溫，達到保暖的效果。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "5. 刺蝟在寒冷的冬天來臨前會大量進食，並在冬天進行「冬眠」。冬眠的主要目的是甚麼？",
+        options: [
+          "避開天敵的捕食",
+          "尋找更多的食物",
+          "降低呼吸和心跳頻率，減少能量消耗",
+          "加快身體散熱"
+        ],
+        correct: 2,
+        explanation: "刺蝟在冬眠時會降低呼吸和心跳頻率，並減少排泄和活動，以減少能量消耗，度過食物短缺的冬天。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "6. 下列哪一項關於「駱駝」適應沙漠環境的描述是不正確的？",
+        options: [
+          "駝峰用來儲存水分，讓牠缺水時也能生存",
+          "長而濃密的睫毛可以阻擋風沙吹襲",
+          "寬闊而柔軟的腳掌方便在沙土上行走",
+          "駝峰把脂肪集中起來，使身體其他部分加快散熱"
+        ],
+        correct: 0,
+        explanation: "不正確。駱駝的駝峰是用來儲存脂肪（而非水分），脂肪分解時可提供能量；同時把脂肪集中起來，有助身體其他部分加快散熱。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "7. 狐獴（Meerkat）在炎熱的沙漠中主要透過甚麼行為來避開高溫？",
+        options: [
+          "躲在堅硬的外殼內",
+          "利用利爪挖掘洞穴，躲在清涼的地下",
+          "隨季節變化遷徙到南方",
+          "在身上塗滿泥巴降溫"
+        ],
+        correct: 1,
+        explanation: "狐獴擁有適合挖掘的利爪，能挖掘洞穴並躲在清涼的地下以避開沙漠日間的高溫。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "8. 非洲跳鼠為了適應沙漠環境，牠的生活習性是怎樣的？",
+        options: [
+          "日間活動，晚上躲在洞穴內",
+          "日間躲在洞穴內，晚上才出來覓食",
+          "整個夏天都在洞穴內休眠",
+          "依靠喝大量的水來降低體溫"
+        ],
+        correct: 1,
+        explanation: "非洲跳鼠為了避開沙漠日間的酷熱，會在日間躲藏在洞穴內，到了晚上氣溫下降時才出來覓食。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "9. 溫帶草原的草類植物有「窄長的葉」，這項特徵有甚麼功用？",
+        options: [
+          "固定樹幹",
+          "減少水分流失",
+          "增加接觸陽光的機會",
+          "儲存大量水分"
+        ],
+        correct: 1,
+        explanation: "溫帶草原有明顯的旱季，草類植物長有窄長的葉，可以減少水分透過蒸騰作用流失。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "10. 溫帶草原植物擁有「廣闊的根」，這如何幫助它們適應環境？",
+        options: [
+          "抵禦強風吹襲",
+          "防止被動物吃掉",
+          "增加水分吸收",
+          "加快水分蒸發"
+        ],
+        correct: 2,
+        explanation: "溫帶草原植物的根部廣闊，能夠在有限的降雨中增加水分吸收。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "11. 仙人掌的葉子退化成「針狀刺」，主要目的是甚麼？",
+        options: [
+          "減少水分流失",
+          "吸收更多陽光",
+          "儲存豐富養分",
+          "吸引昆蟲傳粉"
+        ],
+        correct: 0,
+        explanation: "沙漠乾燥少雨，仙人掌的葉子退化成針狀刺，能大大減少葉面面積，從而減少水分流失。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "12. 仙人掌的哪一個部分既肥厚又呈綠色，能夠儲存水分？",
+        options: [
+          "根",
+          "莖",
+          "葉",
+          "花"
+        ],
+        correct: 1,
+        explanation: "仙人掌肥厚的莖部能夠儲存大量水分，以適應沙漠乾旱的環境。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "13. 熱帶雨林中的部分植物會「攀附在大樹上，向上生長」，這樣做有甚麼好處？",
+        options: [
+          "減少水分流失",
+          "吸收大樹的養分",
+          "固定樹幹",
+          "增加接觸陽光的機會"
+        ],
+        correct: 3,
+        explanation: "熱帶雨林樹木高大茂密，底層陽光不足，部分植物透過攀附大樹向上生長，以增加接觸陽光的機會。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "14. 熱帶雨林中的大樹長有巨大的「板根」，其主要作用是甚麼？",
+        options: [
+          "儲存水分",
+          "固定樹幹",
+          "進行光合作用",
+          "減少水分蒸發"
+        ],
+        correct: 1,
+        explanation: "熱帶雨林雨量多、泥土較鬆軟，且樹木長得高大參天，巨大的板根有助於穩固地支撐並固定樹幹。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "15. 熱帶雨林底層植物的葉片通常有甚麼特徵，以增加接觸陽光的機會？",
+        options: [
+          "窄小而呈淺綠色",
+          "退化成針狀刺",
+          "闊大而呈深綠色",
+          "表面長滿厚厚的絨毛"
+        ],
+        correct: 2,
+        explanation: "熱帶雨林底層植物的葉片闊大而呈深綠色，能更有效地吸收穿透樹冠的微弱陽光。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "16. 甚麼是「遷徙」？",
+        options: [
+          "動物在冬天進入長時間睡眠的現象",
+          "候鳥為了逃避嚴寒、覓食或繁殖，隨季節變化在不同地區之間來回遷移的行為",
+          "動物把身體捲成一團以保持體溫的行為",
+          "植物隨季節落葉以減少能量消耗的現象"
+        ],
+        correct: 1,
+        explanation: "遷徙是指候鳥為了逃避嚴寒、覓食或繁殖，隨着季節的變化在不同地區之間來回遷移的行為。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "17. 香港米埔自然保護區每年吸引許多候鳥前來過冬，下列哪一項不是米埔吸引候鳥的原因？",
+        options: [
+          "氣候比北方溫暖",
+          "濕地為候鳥提供豐富的魚類、軟體動物和昆蟲等食物",
+          "濕地有適合候鳥棲息的環境（如紅樹林、基圍）",
+          "保護區內終年結冰，沒有人類活動"
+        ],
+        correct: 3,
+        explanation: "香港米埔自然保護區屬於濕地環境，冬季氣候溫暖，並非終年結冰。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "18. 下列哪一種鳥類會在香港米埔自然保護區過冬？",
+        options: [
+          "企鵝",
+          "黑臉琵鷺",
+          "鴕鳥",
+          "蜂鳥"
+        ],
+        correct: 1,
+        explanation: "黑臉琵鷺是每年冬天從北方飛到香港米埔自然保護區過冬的珍稀候鳥之一（其他還有赤頸鴨、白胸苦惡鳥等）。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "19. 關於「黑翅長腳鷸」的描述，下列哪一項是正確的？",
+        options: [
+          "牠們只在香港繁殖，從不遷徙",
+          "牠們在夏季和秋季來港過冬",
+          "牠們在春季和秋季過境香港，但也會在北方繁殖及在南方過冬",
+          "牠們主要在沙漠地區覓食"
+        ],
+        correct: 2,
+        explanation: "根據課文資料，黑翅長腳鷸是「過境遷徙鳥」，牠們在春季和秋季過境香港，並在北方繁殖、在南方過冬。"
+      },
+      {
+        part: "單元二：生物與環境",
+        question: "20. 我們在米埔自然保護區觀鳥時，應該保持甚麼態度？",
+        options: [
+          "大聲喧嘩以吸引鳥類靠近",
+          "隨意走進濕地泥灘觸摸水鳥",
+          "保持安靜，切勿驚擾或破壞牠們的棲息地",
+          "投餵麵包和零食給候鳥吃"
+        ],
+        correct: 2,
+        explanation: "觀鳥時應保持安靜，切勿驚擾或破壞候鳥的棲息地，以保護自然生態。"
+      }
+    ];
+
+    /* =========================================================
+       AUDIO SYSTEM (MP3 TRACKS + BGM RESUME AFTER LIFELINES)
+       ========================================================= */
+    const mp3Tracks = {
+      intro: new Audio("intro.mp3"),
+      bgm: new Audio("bgm.mp3"),
+      win: new Audio("win.mp3"),
+      lose: new Audio("lose.mp3"),
+      finalWin: new Audio("final win.mp3"),
+      fifty: new Audio("50.mp3"),
+      phone: new Audio("phone.mp3"),
+      ask: new Audio("ask.mp3")
+    };
+
+    mp3Tracks.intro.loop = true;
+    mp3Tracks.intro.volume = 0.65;
+    mp3Tracks.bgm.loop = true;
+    mp3Tracks.bgm.volume = 0.45;
+    mp3Tracks.win.volume = 0.8;
+    mp3Tracks.lose.volume = 0.8;
+    mp3Tracks.finalWin.volume = 0.9;
+    mp3Tracks.fifty.volume = 0.85;
+    mp3Tracks.phone.volume = 0.85;
+    mp3Tracks.ask.volume = 0.85;
+
+    let audioCtx = null;
+    let isMuted = false;
+    let introStarted = false;
+    let activeLifelineTrack = null;
+
+    function initAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function stopAllTracks() {
+      activeLifelineTrack = null;
+      Object.values(mp3Tracks).forEach(track => {
+        try {
+          track.onended = null;
+          track.pause();
+          track.currentTime = 0;
+        } catch (e) {}
+      });
+    }
+
+    function resumeBGM() {
+      if (isMuted || answerConfirmed || isGameOver) return;
+      if (document.getElementById("startModal").classList.contains("active")) return;
+      if (activeLifelineTrack && !activeLifelineTrack.paused) return;
+
+      mp3Tracks.bgm.loop = true;
+      mp3Tracks.bgm.play().catch(() => {});
+    }
+
+    function playLifelineAudio(trackKey) {
+      initAudioCtx();
+      if (isMuted) return;
+
+      try {
+        mp3Tracks.bgm.pause();
+      } catch (e) {}
+
+      if (activeLifelineTrack) {
+        try {
+          activeLifelineTrack.onended = null;
+          activeLifelineTrack.pause();
+          activeLifelineTrack.currentTime = 0;
+        } catch (e) {}
+      }
+
+      const track = mp3Tracks[trackKey];
+      if (!track) return;
+
+      activeLifelineTrack = track;
+      track.currentTime = 0;
+      track.onended = () => {
+        activeLifelineTrack = null;
+        resumeBGM();
+      };
+
+      const playPromise = track.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          activeLifelineTrack = null;
+          playLifelineChime();
+          setTimeout(resumeBGM, 500);
+        });
+      }
+    }
+
+    function stopLifelineAudioAndResumeBGM() {
+      if (activeLifelineTrack) {
+        try {
+          activeLifelineTrack.onended = null;
+          activeLifelineTrack.pause();
+          activeLifelineTrack.currentTime = 0;
+        } catch (e) {}
+        activeLifelineTrack = null;
+      }
+      resumeBGM();
+    }
+
+    function playMp3Track(trackKey, fallbackSynthFn) {
+      if (isMuted) return;
+      const track = mp3Tracks[trackKey];
+      if (!track) return;
+
+      track.currentTime = 0;
+      const playPromise = track.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          if (fallbackSynthFn) fallbackSynthFn();
+        });
+      }
+    }
+
+    function ensureIntroPlays() {
+      initAudioCtx();
+      if (!introStarted && document.getElementById("startModal").classList.contains("active") && !isMuted) {
+        mp3Tracks.intro.play().then(() => {
+          introStarted = true;
+        }).catch(() => {});
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      ensureIntroPlays();
+    });
+
+    function toggleAudio() {
+      isMuted = !isMuted;
+      document.getElementById("soundToggleBtn").textContent = isMuted ? "🔇 靜音" : "🔊 音效";
+      Object.values(mp3Tracks).forEach(t => { t.muted = isMuted; });
+      if (!isMuted) {
+        if (document.getElementById("startModal").classList.contains("active")) {
+          ensureIntroPlays();
+        } else if (activeLifelineTrack && !activeLifelineTrack.paused) {
+          activeLifelineTrack.play().catch(() => {});
+        } else if (!answerConfirmed && !isGameOver) {
+          resumeBGM();
+        }
+      }
+    }
+
+    function playNote(freq, type, duration, delay = 0, vol = 0.12) {
+      if (isMuted || !audioCtx) return;
+      setTimeout(() => {
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {}
+      }, delay * 1000);
+    }
+
+    function playSelectSound() {
+      initAudioCtx();
+      playNote(330, 'sine', 0.14, 0, 0.1);
+    }
+
+    function playLockSound() {
+      initAudioCtx();
+      playNote(220, 'triangle', 0.25, 0, 0.14);
+      playNote(330, 'sine', 0.35, 0.08, 0.12);
+    }
+
+    function playWinAudio(isGrandPrize) {
+      stopAllTracks();
+      if (isGrandPrize) {
+        playMp3Track("finalWin", () => {
+          playNote(392.00, 'triangle', 0.2, 0.0, 0.18);
+          playNote(493.88, 'triangle', 0.2, 0.14, 0.18);
+          playNote(587.33, 'triangle', 0.22, 0.28, 0.18);
+          playNote(783.99, 'triangle', 0.7, 0.42, 0.22);
+        });
+      } else {
+        playMp3Track("win", () => {
+          playNote(392.00, 'triangle', 0.18, 0.0, 0.15);
+          playNote(493.88, 'triangle', 0.18, 0.12, 0.15);
+          playNote(587.33, 'triangle', 0.22, 0.24, 0.16);
+          playNote(783.99, 'triangle', 0.55, 0.36, 0.18);
+        });
+      }
+    }
+
+    function playLoseAudio() {
+      stopAllTracks();
+      playMp3Track("lose", () => {
+        playNote(146.83, 'sawtooth', 0.35, 0.0, 0.16);
+        playNote(110.00, 'sawtooth', 0.55, 0.18, 0.18);
+      });
+    }
+
+    function playLifelineChime() {
+      initAudioCtx();
+      playNote(587.33, 'sine', 0.15, 0.0, 0.14);
+      playNote(880.00, 'sine', 0.3, 0.1, 0.14);
+    }
+
+    /* =========================================================
+       MASSIVE CONFETTI CANNON ENGINE
+       ========================================================= */
+    const confettiCanvas = document.getElementById("confettiCanvas");
+    const cCtx = confettiCanvas.getContext("2d");
+    let confettiParticles = [];
+    let confettiAnimId = null;
+
+    function resizeConfettiCanvas() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeConfettiCanvas);
+    resizeConfettiCanvas();
+
+    function launchMassiveConfetti() {
+      confettiParticles = [];
+      const colors = [
+        "#fde047", "#f59e0b", "#38bdf8", "#22c55e",
+        "#ef4444", "#a855f7", "#ffffff", "#fb7185"
+      ];
+
+      for (let i = 0; i < 360; i++) {
+        confettiParticles.push({
+          x: Math.random() * confettiCanvas.width,
+          y: Math.random() * -confettiCanvas.height * 0.8 - 20,
+          w: Math.random() * 11 + 6,
+          h: Math.random() * 7 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 6,
+          vy: Math.random() * 4.5 + 2.5,
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 14,
+          wobble: Math.random() * 10,
+          wobbleSpeed: Math.random() * 0.12 + 0.04
+        });
+      }
+
+      if (!confettiAnimId) {
+        animateConfetti();
+      }
+    }
+
+    function stopConfetti() {
+      if (confettiAnimId) {
+        cancelAnimationFrame(confettiAnimId);
+        confettiAnimId = null;
+      }
+      confettiParticles = [];
+      cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    }
+
+    function animateConfetti() {
+      cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      let activeCount = 0;
+
+      confettiParticles.forEach(p => {
+        p.wobble += p.wobbleSpeed;
+        p.x += p.vx + Math.sin(p.wobble) * 1.6;
+        p.y += p.vy;
+        p.rotation += p.rotSpeed;
+
+        if (p.y < confettiCanvas.height + 30) {
+          activeCount++;
+          cCtx.save();
+          cCtx.translate(p.x, p.y);
+          cCtx.rotate((p.rotation * Math.PI) / 180);
+          cCtx.fillStyle = p.color;
+          cCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cCtx.restore();
+        }
+      });
+
+      if (activeCount > 0) {
+        confettiAnimId = requestAnimationFrame(animateConfetti);
+      } else {
+        stopConfetti();
+      }
+    }
+
+    /* =========================================================
+       GAME STATE & SUDDEN-DEATH PROGRESSION LOGIC
+       ========================================================= */
+    let currentQ = 0;
+    let selectedAnswerIndex = null;
+    let answerConfirmed = false;
+    let eliminatedIndices = new Set();
+    let lifelinesUsed = { fifty: false, phone: false, audience: false };
+
+    let isGameOver = false;
+    let failedLadderIndex = -1;
+    let bankedPrize = "£0";
+
+    function buildMoneyLadder() {
+      const ladderEl = document.getElementById("moneyLadder");
+      ladderEl.classList.remove("frozen");
+      ladderEl.innerHTML = "";
+      for (let i = 0; i < prizeLadder.length; i++) {
+        const row = document.createElement("div");
+        row.className = "ladder-row";
+        if (milestones.has(i)) row.classList.add("milestone");
+        row.id = `ladder-${i}`;
+        row.innerHTML = `<span><span class="ladder-num">${i + 1}</span></span><span>${prizeLadder[i]}</span>`;
+        ladderEl.appendChild(row);
+      }
+    }
+
+    function updateLadderHighlight() {
+      const ladderEl = document.getElementById("moneyLadder");
+      const hudPill = document.getElementById("hudPrizePill");
+
+      if (isGameOver) {
+        ladderEl.classList.add("frozen");
+        for (let i = 0; i < prizeLadder.length; i++) {
+          const row = document.getElementById(`ladder-${i}`);
+          row.classList.remove("active", "passed", "frozen-stop");
+          if (i < failedLadderIndex) row.classList.add("passed");
+          if (i === failedLadderIndex) row.classList.add("frozen-stop");
+        }
+        hudPill.classList.add("gameover-badge");
+        hudPill.textContent = `遊戲結束 • 獎金：${bankedPrize}`;
+      } else {
+        ladderEl.classList.remove("frozen");
+        for (let i = 0; i < prizeLadder.length; i++) {
+          const row = document.getElementById(`ladder-${i}`);
+          row.classList.remove("active", "passed", "frozen-stop");
+          if (i < currentQ) row.classList.add("passed");
+          if (i === currentQ) row.classList.add("active");
+        }
+        hudPill.classList.remove("gameover-badge");
+        hudPill.textContent = `第 ${currentQ + 1} / 20 題 • ${prizeLadder[currentQ]}`;
+      }
+    }
+
+    function toggleMobileLadder() {
+      document.getElementById("moneyLadder").classList.toggle("mobile-open");
+    }
+
+    function startGame() {
+      initAudioCtx();
+      document.getElementById("startModal").classList.remove("active");
+      buildMoneyLadder();
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      selectedAnswerIndex = null;
+      answerConfirmed = false;
+      eliminatedIndices.clear();
+
+      stopAllTracks();
+      playMp3Track("bgm", null);
+
+      const q = quizQuestions[currentQ];
+      document.getElementById("qPartLabel").textContent = `${q.part} • 第 ${currentQ + 1} / 20 題`;
+      document.getElementById("questionText").textContent = q.question;
+
+      for (let i = 0; i < 4; i++) {
+        const wrap = document.getElementById(`wrap-${i}`);
+        const btn = document.getElementById(`ans-${i}`);
+        wrap.className = "answer-lozenge-wrap";
+        btn.disabled = false;
+        document.getElementById(`text-${i}`).textContent = q.options[i];
+      }
+
+      document.getElementById("finalAnswerBar").classList.remove("active");
+      const feedbackPanel = document.getElementById("feedbackPanel");
+      feedbackPanel.classList.remove("active", "loss-border");
+      updateLadderHighlight();
+    }
+
+    function selectAnswer(chosenIndex) {
+      if (answerConfirmed || isGameOver || eliminatedIndices.has(chosenIndex)) return;
+
+      selectedAnswerIndex = chosenIndex;
+      playSelectSound();
+
+      for (let i = 0; i < 4; i++) {
+        const wrap = document.getElementById(`wrap-${i}`);
+        wrap.classList.remove("locked");
+        if (i === chosenIndex) {
+          wrap.classList.add("locked");
+        }
+      }
+
+      const letters = ["A", "B", "C", "D"];
+      const q = quizQuestions[currentQ];
+      document.getElementById("selectedChoiceText").textContent = `已選擇 ${letters[chosenIndex]}：${q.options[chosenIndex]}`;
+      document.getElementById("finalAnswerBar").classList.add("active");
+    }
+
+    function confirmFinalAnswer() {
+      if (selectedAnswerIndex === null || answerConfirmed || isGameOver) return;
+      answerConfirmed = true;
+
+      document.getElementById("finalAnswerBar").classList.remove("active");
+
+      for (let i = 0; i < 4; i++) {
+        document.getElementById(`ans-${i}`).disabled = true;
+      }
+
+      const chosenIndex = selectedAnswerIndex;
+      const chosenWrap = document.getElementById(`wrap-${chosenIndex}`);
+      playLockSound();
+
+      const q = quizQuestions[currentQ];
+
+      setTimeout(() => {
+        chosenWrap.classList.remove("locked");
+
+        const feedbackPanel = document.getElementById("feedbackPanel");
+        const statusEl = document.getElementById("feedbackStatus");
+        const prizeEl = document.getElementById("feedbackPrizeWon");
+        const expEl = document.getElementById("feedbackExplanation");
+        const actionsEl = document.getElementById("feedbackActions");
+
+        expEl.textContent = q.explanation;
+        actionsEl.innerHTML = "";
+
+        if (chosenIndex === q.correct) {
+          chosenWrap.classList.add("correct");
+          const isFinalQ = (currentQ === quizQuestions.length - 1);
+
+          bankedPrize = prizeLadder[currentQ];
+          playWinAudio(isFinalQ);
+
+          statusEl.style.color = "#4ade80";
+          statusEl.textContent = isFinalQ ? "👑 恭喜成為百萬富翁！最終答案正確！" : "✓ 答對了！最終答案正確！";
+          prizeEl.style.color = "var(--gold-light)";
+          prizeEl.textContent = `獲得獎金：${bankedPrize}`;
+
+          if (isFinalQ) {
+            launchMassiveConfetti();
+          }
+
+          const nextBtn = document.createElement("button");
+          nextBtn.className = "next-btn";
+          nextBtn.textContent = isFinalQ ? "領取 £1,000,000 大獎 🏆" : "下一題 ➜";
+          nextBtn.onclick = nextQuestion;
+          actionsEl.appendChild(nextBtn);
+
+        } else {
+          chosenWrap.classList.add("wrong");
+          document.getElementById(`wrap-${q.correct}`).classList.add("correct");
+          playLoseAudio();
+
+          const correctLetter = ["A", "B", "C", "D"][q.correct];
+          feedbackPanel.classList.add("loss-border");
+
+          isGameOver = true;
+          failedLadderIndex = currentQ;
+          updateLadderHighlight();
+
+          statusEl.style.color = "#f87171";
+          statusEl.textContent = `✕ 答錯了，遊戲結束！正確答案是：${correctLetter}`;
+          prizeEl.style.color = "#fde047";
+          prizeEl.textContent = `最終獲得獎金：${bankedPrize}`;
+
+          const restartBtn = document.createElement("button");
+          restartBtn.className = "next-btn";
+          restartBtn.textContent = "從頭再玩一次 🔄";
+          restartBtn.onclick = restartGame;
+          actionsEl.appendChild(restartBtn);
+        }
+
+        feedbackPanel.classList.add("active");
+      }, 600);
+    }
+
+    function nextQuestion() {
+      if (isGameOver) return;
+      currentQ++;
+      if (currentQ < quizQuestions.length) {
+        loadQuestion();
+      } else {
+        showVictoryScreen();
+      }
+    }
+
+    function showVictoryScreen() {
+      stopAllTracks();
+      playMp3Track("finalWin", null);
+      launchMassiveConfetti();
+      document.getElementById("endModal").classList.add("active");
+    }
+
+    function restartGame() {
+      stopConfetti();
+      stopAllTracks();
+      currentQ = 0;
+      isGameOver = false;
+      failedLadderIndex = -1;
+      bankedPrize = "£0";
+      lifelinesUsed = { fifty: false, phone: false, audience: false };
+      document.getElementById("ll-5050").classList.remove("used");
+      document.getElementById("ll-phone").classList.remove("used");
+      document.getElementById("ll-audience").classList.remove("used");
+      document.getElementById("endModal").classList.remove("active");
+      buildMoneyLadder();
+      loadQuestion();
+    }
+
+    /* =========================================================
+       LIFELINE 1: 50:50 ("50.mp3" -> RESUMES "bgm.mp3")
+       ========================================================= */
+    function useFiftyFifty() {
+      if (lifelinesUsed.fifty || answerConfirmed || isGameOver) return;
+      lifelinesUsed.fifty = true;
+      document.getElementById("ll-5050").classList.add("used");
+      playLifelineAudio("fifty");
+
+      const q = quizQuestions[currentQ];
+      const wrongIndices = [0, 1, 2, 3].filter(idx => idx !== q.correct);
+      wrongIndices.sort(() => Math.random() - 0.5);
+      const toRemove = wrongIndices.slice(0, 2);
+
+      toRemove.forEach(idx => {
+        eliminatedIndices.add(idx);
+        const wrap = document.getElementById(`wrap-${idx}`);
+        wrap.classList.remove("locked");
+        wrap.classList.add("eliminated");
+        document.getElementById(`ans-${idx}`).disabled = true;
+
+        if (selectedAnswerIndex === idx) {
+          selectedAnswerIndex = null;
+          document.getElementById("finalAnswerBar").classList.remove("active");
+        }
+      });
+    }
+
+    /* =========================================================
+       LIFELINE 2: PHONE A FRIEND ("phone.mp3" -> RESUMES "bgm.mp3")
+       ========================================================= */
+    function usePhoneFriend() {
+      if (lifelinesUsed.phone || answerConfirmed || isGameOver) return;
+      lifelinesUsed.phone = true;
+      document.getElementById("ll-phone").classList.add("used");
+      playLifelineAudio("phone");
+
+      const q = quizQuestions[currentQ];
+      const letters = ["A", "B", "C", "D"];
+      const correctLetter = letters[q.correct];
+      const correctText = q.options[q.correct];
+
+      const phoneModal = document.getElementById("phoneModal");
+      const statusText = document.getElementById("callStatusText");
+      const speechEl = document.getElementById("mrTaiSpeech");
+      const closeBtn = document.getElementById("closePhoneBtn");
+      const avatar = document.getElementById("mrTaiAvatar");
+
+      statusText.textContent = "正在撥號給朋友...";
+      statusText.style.color = "#facc15";
+      speechEl.textContent = "📞 嘟……嘟……正在接通Mr Tai……";
+      closeBtn.style.display = "none";
+      avatar.classList.add("ringing-pulse");
+      phoneModal.classList.add("active");
+
+      setTimeout(() => {
+        avatar.classList.remove("ringing-pulse");
+        statusText.textContent = "已接通 • 00:15";
+        statusText.style.color = "#4ade80";
+        speechEl.innerHTML = `
+          「你好！我是<strong>Mr Tai</strong>！我們一起來分析這道科學題目：<br/><br/>
+          <em>${q.explanation}</em><br/><br/>
+          所以你應該選擇 <strong>${correctLetter}：${correctText}</strong>！」
+        `;
+        closeBtn.style.display = "inline-block";
+      }, 1100);
+    }
+
+    function closePhoneModal() {
+      document.getElementById("phoneModal").classList.remove("active");
+      stopLifelineAudioAndResumeBGM();
+    }
+
+    /* =========================================================
+       LIFELINE 3: ASK THE AUDIENCE ("ask.mp3" -> RESUMES "bgm.mp3")
+       ========================================================= */
+    function useAskAudience() {
+      if (lifelinesUsed.audience || answerConfirmed || isGameOver) return;
+      lifelinesUsed.audience = true;
+      document.getElementById("ll-audience").classList.add("used");
+      playLifelineAudio("ask");
+
+      const q = quizQuestions[currentQ];
+      const activeOptions = [0, 1, 2, 3].filter(i => !eliminatedIndices.has(i));
+      const votes = [0, 0, 0, 0];
+
+      const audienceIsConfident = Math.random() < 0.88;
+
+      if (activeOptions.length === 2) {
+        const otherIdx = activeOptions.find(i => i !== q.correct);
+        const correctShare = audienceIsConfident
+          ? Math.floor(Math.random() * 24) + 64
+          : Math.floor(Math.random() * 14) + 45;
+        votes[q.correct] = correctShare;
+        votes[otherIdx] = 100 - correctShare;
+      } else {
+        const correctShare = audienceIsConfident
+          ? Math.floor(Math.random() * 25) + 52
+          : Math.floor(Math.random() * 12) + 34;
+
+        let remaining = 100 - correctShare;
+        const wrongIndices = [0, 1, 2, 3].filter(i => i !== q.correct);
+        
+        const r1 = Math.floor(Math.random() * (remaining * 0.6));
+        const r2 = Math.floor(Math.random() * ((remaining - r1) * 0.75));
+        const r3 = remaining - r1 - r2;
+
+        votes[q.correct] = correctShare;
+        votes[wrongIndices[0]] = r1;
+        votes[wrongIndices[1]] = r2;
+        votes[wrongIndices[2]] = r3;
+      }
+
+      for (let i = 0; i < 4; i++) {
+        document.getElementById(`bar-${i}`).style.height = "0%";
+        document.getElementById(`pct-${i}`).textContent = "0%";
+      }
+
+      document.getElementById("audienceModal").classList.add("active");
+
+      setTimeout(() => {
+        for (let i = 0; i < 4; i++) {
+          document.getElementById(`bar-${i}`).style.height = `${votes[i]}%`;
+          document.getElementById(`pct-${i}`).textContent = `${votes[i]}%`;
+        }
+      }, 150);
+    }
+
+    function closeAudienceModal() {
+      document.getElementById("audienceModal").classList.remove("active");
+      stopLifelineAudioAndResumeBGM();
+    }
+  </script>
+</body>
+</html>
